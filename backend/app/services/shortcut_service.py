@@ -21,7 +21,7 @@ class ShortcutService:
         page_size: int = 25,
         next_path: Optional[str] = None,
     ) -> TicketListResponse:
-        query = f"owner:{owner} !is:done"
+        query = f"owner:{owner}"
 
         payload = await self._client.search_stories(
             query=query,

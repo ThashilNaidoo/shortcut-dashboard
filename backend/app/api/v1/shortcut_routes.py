@@ -17,8 +17,8 @@ def get_shortcut_service(client: ShortcutClient = Depends(get_shortcut_client)) 
 
 @router.get("/stories", response_model=TicketListResponse)
 async def list_stories_for_user(
-    owner: str = Query("thashilnaidoo"),
-    page_size: int = Query(25, ge=1, le=100),
+    owner: str = Query(None),
+    page_size: int = Query(25, ge=1, le=200),
     next: Optional[str] = Query(None, description="User the `next` value returned by the previous call"),
     svc: ShortcutService = Depends(get_shortcut_service),
 ) -> TicketListResponse:
