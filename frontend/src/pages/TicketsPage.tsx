@@ -1,32 +1,16 @@
 import { useEffect, useMemo, useState, useRef } from "react";
+import type { components } from "../api/schema";
 
-type ShortcutStorySlim = {
-    id: number;
-    name?: string;
-    app_url?: string;
-    url?: string;
-    story_type?: string;
-    workflow_state_id?: number;
-    labels?: { name: string }[];
-    estimate?: number;
-    owner_ids?: string[];
-    updated_at?: string;
-    created_at?: string;
-};
-
-type ShortcutSearchResponse = {
-    data: ShortcutStorySlim[];
-    next?: string | null;
-    total?: number | null;
-};
+type TicketDTO = components["schemas"]["TicketDTO"]
+type TicketListResponse = components["schemas"]["TicketListResponse"]
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL as string;
 const OWNER = "thashilnaidoo";
 
-function TicketCard({ story }: { story: ShortcutStorySlim }) {
-    const title = story.name ?? `Story ${story.id}`
-    const labels = story.labels?.map((l) => l.name) ?? [];
-    const link = story.app_url ?? story.url;
+function TicketCard({ story }: { story: TicketDTO }) {
+    const title = story.title ?? `Story ${story.id}`
+    const labels = story.labels ?? [];
+    const link = story.app_url ?? "";
 
     return (
         <div
@@ -42,7 +26,25 @@ function TicketCard({ story }: { story: ShortcutStorySlim }) {
         >
             <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
                 <div style={{ fontWeight: 700, lineHeight: 1.25 }}>{title}</div>
-                <div style={{ opacity: 0.75, fontVariantNumeric: "tabular-nums" }}>#{story.id}</div>
+                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                    {story.state_name && (
+                        <span
+                            style={{
+                                border: "1px solid rgba(255,255,255,0.18)",
+                                padding: "4px 10px",
+                                fontSize: 12,
+                                fontWeight: 600,
+                                opacity: 0.9,
+                            }}
+                        >
+                            {story.state_name}
+                        </span>
+                    )}
+
+                    <div style={{ opacity: 0.75, fontVariantNumeric: "tabular-nums" }}>
+                        #{story.id}
+                    </div>
+                </div>
             </div>
 
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center" }}>
@@ -101,7 +103,7 @@ function TicketCard({ story }: { story: ShortcutStorySlim }) {
 
                 {story.updated_at ? (
                     <span style={{ opacity: 0.6, fontSize: 12 }}>
-                        Updated: {new Date(story.updated_at).toLocaleString()}
+                        Updated: {story.updated_at_readable}
                     </span>
                 ) : null}
             </div>
@@ -115,7 +117,7 @@ export default function TicketsPage() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    const [tickets, setTickets] = useState<ShortcutStorySlim[]>([]);
+    const [tickets, setTickets] = useState<TicketDTO[]>([]);
     const [next, setNext] = useState<string | null>(null);
 
     const endpointBase = useMemo(() => {
@@ -127,9 +129,9 @@ export default function TicketsPage() {
         setError(null);
 
         try {
-            const res = await fetch(`${endpointBase}?page_size=25`);
+            const res = await fetch(`${endpointBase}?owner=${OWNER}&page_size=25`);
             if (!res.ok) throw new Error(`HTTP ${res.status}: ${await res.text()}`);
-            const json = (await res.json()) as ShortcutSearchResponse;
+            const json = (await res.json()) as TicketListResponse;
 
             setTickets(json.data ?? []);
             setNext((json.next ?? null) as string | null);
@@ -150,7 +152,7 @@ export default function TicketsPage() {
             const url = `${endpointBase}?page_size=25&next=${encodeURIComponent(next)}`;
             const res = await fetch(url);
             if (!res.ok) throw new Error(`HTTP ${res.status}: ${await res.text()}`);
-            const json = (await res.json()) as ShortcutSearchResponse;
+            const json = (await res.json()) as TicketListResponse;
 
             setTickets((prev) => [...prev, ...(json.data ?? [])]);
             setNext((json.next ?? null) as string | null);
