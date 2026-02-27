@@ -4,7 +4,7 @@ from typing import Optional
 from datetime import datetime
 
 from app.clients.shortcut_client import ShortcutClient
-from app.schemas.shortcut import StoryDTO, StoryListResponse
+from app.schemas.shortcut import StoryDTO, StoryFullDTO, StoryListResponse
 
 # ============================================
 # Format the date to more readable version
@@ -96,7 +96,7 @@ class ShortcutService:
     # ============================================
     # Get individual story by story id
     # ============================================
-    async def get_story_by_id(self, story_id: int) -> StoryDTO:
+    async def get_story_by_id(self, story_id: int) -> StoryFullDTO:
         s = await self._client.get_story(story_id)
         state_map = await self._client.get_workflow_state_map(ttl_seconds=300)
         dto = _map_story_to_dto(s, state_map)
