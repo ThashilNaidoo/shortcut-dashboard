@@ -1,5 +1,5 @@
 import type { components } from "../../api/schema";
-type TicketDTO = components["schemas"]["TicketDTO"];
+type StoryDTO = components["schemas"]["StoryDTO"];
 
 export type ColumnKey =
     | "todo"
@@ -32,14 +32,11 @@ export function columnForStateName(stateName?: string | null, stateType?: string
     if (["in progress", "started", "doing", "dev", "development"].includes(s)) return "in_progress";
 
     // Under Review in Merging
-    if (
-        s.includes("review") &&
-        (s.includes("merge") || s.includes("merging") || s.includes("pr") || s.includes("pull request"))
-    )
+    if ((s.includes("merge") || s.includes("merging")))
         return "ur_merging";
 
     // Under Review in Staging
-    if (s.includes("review") && (s.includes("staging") || s.includes("qa") || s.includes("test")))
+    if ((s.includes("staging")))
         return "ur_staging";
 
     // Ready for Deployment
@@ -58,8 +55,8 @@ export function columnForStateName(stateName?: string | null, stateType?: string
     return "other";
 }
 
-export function groupTicketsByColumn(tickets: TicketDTO[]) {
-    const grouped: Record<ColumnKey, TicketDTO[]> = {
+export function groupStoriesByColumn(stories: StoryDTO[]) {
+    const grouped: Record<ColumnKey, StoryDTO[]> = {
         todo: [],
         in_progress: [],
         ur_merging: [],
@@ -69,7 +66,7 @@ export function groupTicketsByColumn(tickets: TicketDTO[]) {
         other: [],
     };
 
-    for (const t of tickets) grouped[columnForStateName(t.state_name, t.state_type)].push(t);
+    for (const t of stories) grouped[columnForStateName(t.state_name, t.state_type)].push(t);
 
     return grouped;
 }

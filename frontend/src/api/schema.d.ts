@@ -47,8 +47,8 @@ export interface components {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
         };
-        /** TicketDTO */
-        TicketDTO: {
+        /** StoryDTO */
+        StoryDTO: {
             /** Id */
             id: number;
             /** Title */
@@ -77,10 +77,10 @@ export interface components {
             /** Updated At Readable */
             updated_at_readable?: string | null;
         };
-        /** TicketListResponse */
-        TicketListResponse: {
+        /** StoryListResponse */
+        StoryListResponse: {
             /** Data */
-            data: components["schemas"]["TicketDTO"][];
+            data: components["schemas"]["StoryDTO"][];
             /** Next */
             next?: string | null;
             /** Total */
@@ -128,7 +128,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["TicketListResponse"];
+                    "application/json": components["schemas"]["StoryListResponse"];
                 };
             };
             /** @description Validation Error */

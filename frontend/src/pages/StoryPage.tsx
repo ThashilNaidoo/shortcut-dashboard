@@ -1,27 +1,36 @@
-import { useEffect, useState, useRef } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { useEffect, useState, useRef, useCallback } from "react";
 import type { components } from "../api/schema";
 import { KanbanBoard } from "../components/kanban/KanbanBoard";
-import { fetchTickets } from "../api/shortcut";
+import { StoryDetailModal } from "../components/kanban/StoryDetailModal";
+import { fetchStories, fetchStoryById } from "../api/shortcut";
 
-type TicketDTO = components["schemas"]["TicketDTO"];
+type StoryDTO = components["schemas"]["StoryDTO"];
 
-export default function TicketsPage() {
+export default function StoryPage() {
+    const navigate = useNavigate();
+    const { storyId } = useParams<{ storyId?: string }>();
+
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [tickets, setTickets] = useState<TicketDTO[]>([]);
+    const [stories, setStories] = useState<StoryDTO[]>([]);
     const [next, setNext] = useState<string | null>(null);
+
+    const [modalStory, setModalStory] = useState<StoryDTO | null>(null);
+    const [modalLoading, setModalLoading] = useState(false);
+    const [modalError, setModalError] = useState<string | null>(null);
 
     const didLoadRef = useRef(false);
 
     async function loadFirstPage() {
         setLoading(true);
         setError(null);
-        setTickets([]);
+        setStories([]);
         setNext(null);
 
         try {
-            const json = await fetchTickets({ pageSize: 100 });
-            setTickets(json.data ?? []);
+            const json = await fetchStories({ pageSize: 100 });
+            setStories(json.data ?? []);
             setNext(json.next ?? null);
         } catch (e: any) {
             setError(e?.message ?? "Unknown error");
@@ -37,8 +46,8 @@ export default function TicketsPage() {
         setError(null);
 
         try {
-            const json = await fetchTickets({ pageSize: 100, next });
-            setTickets((prev) => [...prev, ...(json.data ?? [])]);
+            const json = await fetchStories({ pageSize: 100, next });
+            setStories((prev) => [...prev, ...(json.data ?? [])]);
             setNext(json.next ?? null);
         } catch (e: any) {
             setError(e?.message ?? "Unknown error");
@@ -46,6 +55,42 @@ export default function TicketsPage() {
             setLoading(false);
         }
     }
+
+    useEffect(() => {
+        if (!storyId) {
+            setModalStory(null);
+            setModalError(null);
+            return;
+        }
+
+        const id = parseInt(storyId, 10);
+        if (isNaN(id)) {
+            setModalError("Invalid story ID");
+            return;
+        }
+
+        const cached = stories.find((s) => s.id === id);
+        if (cached) {
+            setModalStory(cached);
+            setModalError(null);
+            return;
+        }
+
+        setModalLoading(true);
+        setModalError(null);
+        setModalStory(null);
+
+        fetchStoryById(id)
+            .then((s) => setModalStory(s))
+            .catch((e: any) => setModalError(e?.message ?? "Failed to load story"))
+            .finally(() => setModalLoading(false));
+    }, [storyId, stories]);
+
+    const handleCloseModal = useCallback(() => {
+        navigate("/stories");
+    }, [navigate]);
+
+    const isModalOpen = Boolean(storyId);
 
     useEffect(() => {
         if (didLoadRef.current) return;
@@ -57,9 +102,9 @@ export default function TicketsPage() {
     return (
         <div style={{ padding: 24, display: "grid", gap: 16 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12 }}>
-                <h1 style={{ margin: 0 }}>Tickets</h1>
+                <h1 style={{ margin: 0 }}>Stories</h1>
                 <div style={{ opacity: 0.7 }}>
-                {tickets.length} ticket{tickets.length === 1 ? "" : "s"}
+                {stories.length} {stories.length === 1 ? "story" : "stories"}
                 {next ? " (more available)" : ""}
                 {loading ? " · Loading..." : ""}
                 </div>
@@ -79,7 +124,7 @@ export default function TicketsPage() {
                 </div>
             )}
 
-            <KanbanBoard tickets={tickets} />
+            <KanbanBoard stories={stories} />
 
             {next && (
                 <button
@@ -97,6 +142,15 @@ export default function TicketsPage() {
                 >
                 Load more
                 </button>
+            )}
+
+            {isModalOpen && (
+                <StoryDetailModal
+                    story={modalStory}
+                    loading={modalLoading}
+                    error={modalError}
+                    onClose={handleCloseModal}
+                />
             )}
         </div>
     );

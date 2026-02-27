@@ -4,7 +4,7 @@ from typing import List, Optional
 from pydantic import BaseModel
 from datetime import datetime
 
-class TicketDTO(BaseModel):
+class StoryDTO(BaseModel):
     id: int
     title: str
     app_url: Optional[str] = None
@@ -21,7 +21,7 @@ class TicketDTO(BaseModel):
     updated_at: Optional[datetime] = None
     updated_at_readable: Optional[str] = None
 
-class TicketListResponse(BaseModel):
-    data: List[TicketDTO]
+class StoryListResponse(BaseModel):
+    data: List[StoryDTO]
     next: Optional[str] = None
     total: Optional[int] = None

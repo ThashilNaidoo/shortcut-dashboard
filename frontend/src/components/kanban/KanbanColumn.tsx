@@ -1,9 +1,9 @@
 import type { components } from "../../api/schema";
-import { TicketCard } from "./TicketCard";
+import { StoryCard } from "./StoryCard";
 
-type TicketDTO = components["schemas"]["TicketDTO"];
+type StoryDTO = components["schemas"]["StoryDTO"];
 
-export function KanbanColumn({ title, items }: { title: string; items: TicketDTO[] }) {
+export function KanbanColumn({ title, items }: { title: string; items: StoryDTO[] }) {
     return (
         <div
             style={{
@@ -43,9 +43,9 @@ export function KanbanColumn({ title, items }: { title: string; items: TicketDTO
                 }}
             >
                 {items.length === 0 ? (
-                    <div style={{ opacity: 0.6, fontSize: 13 }}>No tickets</div>
+                    <div style={{ opacity: 0.6, fontSize: 13 }}>No stories</div>
                 ) : (
-                    items.map((t) => <TicketCard key={t.id} t={t} />)
+                    items.map((t) => <StoryCard key={t.id} t={t} />)
                 )}
             </div>
         </div>

@@ -1,12 +1,12 @@
 import type { components } from "../../api/schema";
 
-import { COLUMNS, groupTicketsByColumn } from "./kanban";
+import { COLUMNS, groupStoriesByColumn } from "./kanban";
 import { KanbanColumn } from "./KanbanColumn";
 
-type TicketDTO = components["schemas"]["TicketDTO"];
+type StoryDTO = components["schemas"]["StoryDTO"];
 
-export function KanbanBoard({ tickets }: { tickets: TicketDTO[] }) {
-    const grouped = groupTicketsByColumn(tickets);
+export function KanbanBoard({ stories }: { stories: StoryDTO[] }) {
+    const grouped = groupStoriesByColumn(stories);
 
     return (
         <div

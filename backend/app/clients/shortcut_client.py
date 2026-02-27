@@ -19,14 +19,10 @@ class ShortcutClient:
         self._state_map_loaded_at: float = 0.0
         self._state_map_lock = asyncio.Lock()
 
-    async def search_stories(
-        self,
-        *,
-        query: str,
-        page_size: int = 25,
-        detail: str = "slim",
-        next_path: Optional[str] = None,
-    ) -> Dict[str, Any]:
+    # ============================================
+    # Get all stories
+    # ============================================
+    async def search_stories(self, *, query: str, page_size: int = 25, detail: str = "slim", next_path: Optional[str] = None) -> Dict[str, Any]:
         url = f"{self.BASE_URL}/search/stories"
 
         params: Dict[str, Any] = {
@@ -43,19 +39,31 @@ class ShortcutClient:
 
             r.raise_for_status()
             return r.json()
-        
+
+    # ============================================
+    # Get individual story
+    # ============================================
+    async def get_story(self, story_id: int) -> Dict[str, Any]:
+        url = f"{self.BASE_URL}/stories/{story_id}"
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            r = await client.get(url, headers=self._headers)
+            r.raise_for_status()
+            return r.json()
+
+    # ============================================
+    # Get list of workflows
+    # ============================================
     async def list_workflows(self) -> list[dict[str, Any]]:
         url = f"{self.BASE_URL}/workflows"
         async with httpx.AsyncClient(timeout=30.0) as client:
             r = await client.get(url, headers=self._headers)
             r.raise_for_status()
             return r.json()
-        
-    async def get_workflow_state_map(
-        self,
-        *,
-        ttl_seconds: int = 300,
-    ) -> Dict[int, Tuple[str, str, Optional[int]]]:
+    
+    # ============================================
+    # Create a workflow and story state map
+    # ============================================
+    async def get_workflow_state_map(self, *, ttl_seconds: int = 300) -> Dict[int, Tuple[str, str, Optional[int]]]:
         now = time.time()
         if self._state_map and (now - self._state_map_loaded_at) < ttl_seconds:
             return self._state_map
