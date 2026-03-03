@@ -1,11 +1,9 @@
 import { useNavigate, useParams } from "react-router-dom";
 import { useEffect, useState, useRef, useCallback } from "react";
-import type { components } from "../api/schema";
 import { KanbanBoard } from "../components/kanban/KanbanBoard";
 import { StoryDetailModal } from "../components/kanban/StoryDetailModal";
 import { fetchStories, fetchStoryById } from "../api/shortcut";
-
-type StoryDTO = components["schemas"]["StoryDTO"];
+import type { StoryDTO, StoryFullDTO } from "../api/types";
 
 export default function StoryPage() {
     const navigate = useNavigate();
@@ -16,9 +14,11 @@ export default function StoryPage() {
     const [stories, setStories] = useState<StoryDTO[]>([]);
     const [next, setNext] = useState<string | null>(null);
 
-    const [modalStory, setModalStory] = useState<StoryDTO | null>(null);
+    const [modalStory, setModalStory] = useState<StoryFullDTO | null>(null);
     const [modalLoading, setModalLoading] = useState(false);
     const [modalError, setModalError] = useState<string | null>(null);
+    const [cachedModalStories, setCachedModalStories] = useState<StoryFullDTO[]>([]);
+
 
     const didLoadRef = useRef(false);
 
@@ -69,7 +69,7 @@ export default function StoryPage() {
             return;
         }
 
-        const cached = stories.find((s) => s.id === id);
+        const cached = cachedModalStories.find((s) => s.id === id);
         if (cached) {
             setModalStory(cached);
             setModalError(null);
@@ -84,7 +84,16 @@ export default function StoryPage() {
             .then((s) => setModalStory(s))
             .catch((e: any) => setModalError(e?.message ?? "Failed to load story"))
             .finally(() => setModalLoading(false));
-    }, [storyId, stories]);
+    }, [storyId, stories, cachedModalStories]);
+
+    useEffect(() => {
+        if (!modalStory) return;
+
+        const cached = cachedModalStories.find((s) => s.id === modalStory.id);
+        if (!cached) {
+            setCachedModalStories([...cachedModalStories, modalStory]);
+        }
+    }, [modalStory, cachedModalStories])
 
     const handleCloseModal = useCallback(() => {
         navigate("/stories");
@@ -96,7 +105,7 @@ export default function StoryPage() {
         if (didLoadRef.current) return;
         didLoadRef.current = true;
         loadFirstPage();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
     }, []);
 
     return (
@@ -104,23 +113,23 @@ export default function StoryPage() {
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12 }}>
                 <h1 style={{ margin: 0 }}>Stories</h1>
                 <div style={{ opacity: 0.7 }}>
-                {stories.length} {stories.length === 1 ? "story" : "stories"}
-                {next ? " (more available)" : ""}
-                {loading ? " · Loading..." : ""}
+                    {stories.length} {stories.length === 1 ? "story" : "stories"}
+                    {next ? " (more available)" : ""}
+                    {loading ? " · Loading..." : ""}
                 </div>
             </div>
 
             {error && (
                 <div
-                style={{
-                    border: "1px solid rgba(255,0,0,0.35)",
-                    background: "rgba(255,0,0,0.08)",
-                    borderRadius: 12,
-                    padding: 12,
-                    whiteSpace: "pre-wrap",
-                }}
+                    style={{
+                        border: "1px solid rgba(255,0,0,0.35)",
+                        background: "rgba(255,0,0,0.08)",
+                        borderRadius: 12,
+                        padding: 12,
+                        whiteSpace: "pre-wrap",
+                    }}
                 >
-                {error}
+                    {error}
                 </div>
             )}
 
@@ -128,19 +137,19 @@ export default function StoryPage() {
 
             {next && (
                 <button
-                onClick={loadMore}
-                disabled={loading}
-                style={{
-                    padding: "10px 14px",
-                    borderRadius: 10,
-                    border: "1px solid rgba(255,255,255,0.2)",
-                    background: "rgba(255,255,255,0.08)",
-                    color: "inherit",
-                    cursor: loading ? "not-allowed" : "pointer",
-                    width: "fit-content",
-                }}
+                    onClick={loadMore}
+                    disabled={loading}
+                    style={{
+                        padding: "10px 14px",
+                        borderRadius: 10,
+                        border: "1px solid rgba(255,255,255,0.2)",
+                        background: "rgba(255,255,255,0.08)",
+                        color: "inherit",
+                        cursor: loading ? "not-allowed" : "pointer",
+                        width: "fit-content",
+                    }}
                 >
-                Load more
+                    Load more
                 </button>
             )}
 

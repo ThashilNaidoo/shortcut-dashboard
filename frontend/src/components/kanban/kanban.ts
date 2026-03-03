@@ -1,5 +1,4 @@
-import type { components } from "../../api/schema";
-type StoryDTO = components["schemas"]["StoryDTO"];
+import type { StoryDTO } from "../../api/types";
 
 export type ColumnKey =
     | "todo"
@@ -18,10 +17,13 @@ export const COLUMNS: { key: ColumnKey; title: string }[] = [
     { key: "ready_deploy", title: "Ready for Deployment" },
     { key: "done", title: "Done" },
     { key: "other", title: "Other" },
-]
+];
 
-export function columnForStateName(stateName?: string | null, stateType?: string | null): ColumnKey {
-    const s = (stateName ?? "").trim().toLowerCase()
+export function columnForStateName(
+    stateName?: string | null,
+    stateType?: string | null,
+): ColumnKey {
+    const s = (stateName ?? "").trim().toLowerCase();
 
     if (!s) return "other";
 
@@ -29,20 +31,25 @@ export function columnForStateName(stateName?: string | null, stateType?: string
     if (["todo", "to do", "unstarted", "backlog"].includes(s)) return "todo";
 
     // In Progress
-    if (["in progress", "started", "doing", "dev", "development"].includes(s)) return "in_progress";
+    if (["in progress", "started", "doing", "dev", "development"].includes(s))
+        return "in_progress";
 
     // Under Review in Merging
-    if ((s.includes("merge") || s.includes("merging")))
-        return "ur_merging";
+    if (s.includes("merge") || s.includes("merging")) return "ur_merging";
 
     // Under Review in Staging
-    if ((s.includes("staging")))
-        return "ur_staging";
+    if (s.includes("staging")) return "ur_staging";
 
     // Ready for Deployment
     if (
-        ["ready for deployment", "ready to deploy", "ready", "deploy", "deployment"].includes(s) ||
-        s.includes("ready") && s.includes("deploy")
+        [
+            "ready for deployment",
+            "ready to deploy",
+            "ready",
+            "deploy",
+            "deployment",
+        ].includes(s) ||
+        (s.includes("ready") && s.includes("deploy"))
     )
         return "ready_deploy";
 
@@ -66,7 +73,8 @@ export function groupStoriesByColumn(stories: StoryDTO[]) {
         other: [],
     };
 
-    for (const t of stories) grouped[columnForStateName(t.state_name, t.state_type)].push(t);
+    for (const t of stories)
+        grouped[columnForStateName(t.state_name, t.state_type)].push(t);
 
     return grouped;
 }

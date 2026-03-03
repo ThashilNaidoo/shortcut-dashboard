@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 import asyncio
+import json
+import re
 from datetime import datetime
+from pathlib import Path
 
 from app.clients.shortcut_client import ShortcutClient
 from app.schemas.shortcut import (
@@ -14,6 +17,26 @@ from app.schemas.shortcut import (
     StoryListResponse,
     TaskDTO,
 )
+
+# ============================================
+# Persistent members cache (id -> display name)
+# ============================================
+_MEMBERS_CACHE_PATH = Path(__file__).parent.parent / "data" / "members_cache.json"
+
+
+def _load_members_cache() -> dict[str, str]:
+    try:
+        return json.loads(_MEMBERS_CACHE_PATH.read_text(encoding="utf-8"))
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {}
+
+
+def _save_members_cache(cache: dict[str, str]) -> None:
+    _MEMBERS_CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)
+    _MEMBERS_CACHE_PATH.write_text(json.dumps(cache, indent=2), encoding="utf-8")
+
+
+_members_cache: dict[str, str] = _load_members_cache()
 
 
 # ============================================
@@ -114,12 +137,7 @@ class ShortcutService:
             self._client.get_workflow_state_map(ttl_seconds=300),
         )
 
-        # Workflow state
-        workflow_state_id = s.get("workflow_state_id")
-        wf_state = state_map.get(workflow_state_id) if isinstance(workflow_state_id, int) else None
-        state_name = wf_state[0] if wf_state else None
-        state_type = wf_state[1] if wf_state else None
-        workflow_id_from_map = wf_state[2] if wf_state else None
+        base = _map_story_to_dto(s, state_map)
 
         # Epic name
         epic_name: str | None = None
@@ -131,20 +149,11 @@ class ShortcutService:
             except Exception:
                 pass
 
-        # Labels
-        label_names: list[str] = []
-        for label in s.get("labels") or []:
-            if isinstance(label, dict) and isinstance(label.get("name"), str):
-                label_names.append(label["name"])
-
         # Datetime
         def _parse_dt(raw: object) -> datetime | None:
             if isinstance(raw, str):
                 return datetime.fromisoformat(raw.replace("Z", "+00:00"))
             return None
-
-        parsed_updated = _parse_dt(s.get("updated_at"))
-        readable = format_datetime_english(parsed_updated) if parsed_updated else None
 
         # Tasks
         tasks = [
@@ -170,17 +179,28 @@ class ShortcutService:
         ]
 
         # Comments
-        comments = [
-            CommentDTO(
-                id=c["id"],
-                author=str(c.get("author_id") or ""),
-                created_at=_parse_dt(c.get("created_at")),
-                parent_id=c.get("parent_id") if isinstance(c.get("parent_id"), int) else None,
-                text=c.get("text") if isinstance(c.get("text"), str) else None,
-            )
-            for c in (s.get("comments") or [])
-            if isinstance(c, dict) and isinstance(c.get("id"), int)
-        ]
+        comments = []
+        for c in s.get("comments") or []:
+            if isinstance(c, dict) and isinstance(c.get("id"), int):
+                member_id = c.get("author_id") or ""
+                if member_id not in _members_cache:
+                    member_data = await self._client.get_member(member_id)
+                    _members_cache[member_id] = member_data.get("profile", {}).get("name") or ""
+                    _save_members_cache(_members_cache)
+
+                member_name = _members_cache[member_id]
+
+                text = c.get("text") if isinstance(c.get("text"), str) else None
+                cleaned = re.sub(r"\[(@[^\]]+)\]\([^)]+\)", r"\1", text)
+                comments.append(
+                    CommentDTO(
+                        id=c["id"],
+                        author=member_name,
+                        created_at=_parse_dt(c.get("created_at")),
+                        parent_id=c.get("parent_id") if isinstance(c.get("parent_id"), int) else None,
+                        text=cleaned,
+                    )
+                )
 
         # Commits
         commits = [
@@ -209,24 +229,24 @@ class ShortcutService:
         ]
 
         return StoryFullDTO(
-            id=s["id"],
-            title=s.get("name") or f"Story {story_id}",
+            id=base.id if base else story_id,
+            title=base.title or f"Story {story_id}" if base else f"Story {story_id}",
             description=s.get("description") or "",
             epic=epic_name,
-            app_url=s.get("app_url") if isinstance(s.get("app_url"), str) else None,
+            app_url=base.app_url if base else None,
             tasks=tasks,
             branches=branches,
             comments=comments,
             commits=commits,
             pull_requests=pull_requests,
-            story_type=s.get("story_type") if isinstance(s.get("story_type"), str) else None,
-            estimate=s.get("estimate") if isinstance(s.get("estimate"), int) else None,
-            labels=label_names,
-            workflow_id=s.get("workflow_id") if isinstance(s.get("workflow_id"), int) else workflow_id_from_map,
-            workflow_state_id=workflow_state_id if isinstance(workflow_state_id, int) else None,
-            state_name=state_name,
-            state_type=state_type,
+            story_type=base.story_type if base else None,
+            estimate=base.estimate if base else None,
+            labels=base.labels if base else [],
+            workflow_id=base.workflow_id if base else None,
+            workflow_state_id=base.workflow_state_id if base else None,
+            state_name=base.state_name if base else None,
+            state_type=base.state_type if base else None,
             created_at=_parse_dt(s.get("created_at")),
-            updated_at=parsed_updated,
-            updated_at_readable=readable,
+            updated_at=base.updated_at if base else None,
+            updated_at_readable=base.updated_at_readable if base else None,
         )

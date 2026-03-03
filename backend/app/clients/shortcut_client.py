@@ -65,6 +65,16 @@ class ShortcutClient:
             return r.json()
 
     # ============================================
+    # Get member by id
+    # ============================================
+    async def get_member(self, member_id: str) -> dict[str, Any]:
+        url = f"{self.BASE_URL}/members/{member_id}"
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            r = await client.get(url, headers=self._headers)
+            r.raise_for_status()
+            return r.json()
+
+    # ============================================
     # Get list of workflows
     # ============================================
     async def list_workflows(self) -> list[dict[str, Any]]:

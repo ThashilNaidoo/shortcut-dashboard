@@ -1,49 +1,85 @@
-import type { components } from "../../api/schema";
+import type { StoryDTO } from "../../api/types";
 import { StoryCard } from "./StoryCard";
 
-type StoryDTO = components["schemas"]["StoryDTO"];
+const MONO = "'Courier New', 'Courier', monospace";
+const AMBER = "#f5c842";
 
 export function KanbanColumn({ title, items }: { title: string; items: StoryDTO[] }) {
     return (
         <div
             style={{
-                border: "1px solid rgba(255,255,255,0.10)",
-                borderRadius: 14,
-                background: "rgba(255,255,255,0.03)",
+                borderTop: `2px solid ${AMBER}`,
+                borderRight: "1px solid rgba(245,200,66,0.2)",
+                borderBottom: "1px solid rgba(245,200,66,0.2)",
+                borderLeft: "1px solid rgba(245,200,66,0.2)",
+                borderRadius: 0,
+                background: "rgba(245,200,66,0.015)",
                 display: "flex",
                 flexDirection: "column",
                 height: "calc(100vh - 140px)",
                 minHeight: 200,
                 overflow: "hidden",
+                fontFamily: MONO,
             }}
         >
             <div
                 style={{
-                padding: "12px 12px 10px",
-                borderBottom: "1px solid rgba(255,255,255,0.08)",
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                gap: 10,
-                flex: "0 0 auto",
+                    padding: "10px 14px",
+                    borderBottom: "1px solid rgba(245,200,66,0.18)",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    gap: 10,
+                    flex: "0 0 auto",
+                    background: "rgba(245,200,66,0.04)",
                 }}
             >
-                <div style={{ fontWeight: 800 }}>{title}</div>
-                <div style={{ opacity: 0.7, fontVariantNumeric: "tabular-nums" }}>{items.length}</div>
+                <div
+                    style={{
+                        fontWeight: 700,
+                        fontSize: 10,
+                        letterSpacing: "0.14em",
+                        textTransform: "uppercase",
+                        color: AMBER,
+                    }}
+                >
+                    {title}
+                </div>
+                <div
+                    style={{
+                        fontSize: 11,
+                        color: AMBER,
+                        opacity: 0.65,
+                        letterSpacing: "0.06em",
+                    }}
+                >
+                    [{String(items.length).padStart(2, "0")}]
+                </div>
             </div>
 
             <div
                 style={{
-                padding: 12,
-                display: "flex",
-                flexDirection: "column",
-                gap: 10,
-                overflowY: "auto",
-                flex: "1 1 auto",
+                    padding: "10px 8px",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 6,
+                    overflowY: "auto",
+                    flex: "1 1 auto",
                 }}
             >
                 {items.length === 0 ? (
-                    <div style={{ opacity: 0.6, fontSize: 13 }}>No stories</div>
+                    <div
+                        style={{
+                            opacity: 0.3,
+                            fontSize: 10,
+                            fontFamily: MONO,
+                            letterSpacing: "0.12em",
+                            textTransform: "uppercase",
+                            paddingTop: 4,
+                        }}
+                    >
+                        -- no records --
+                    </div>
                 ) : (
                     items.map((t) => <StoryCard key={t.id} t={t} />)
                 )}

@@ -1,83 +1,11 @@
 import { useEffect, useRef, useState } from "react";
+import type { StoryFullDTO, TaskDTO, BranchDTO, CommentDTO, CommitDTO, PullRequestDTO } from "../../api/types";
 
-// ── Local types (mirrors StoryFullDTO from backend) ──────────────────────────
-
-interface TaskDTO {
-    id: number;
-    complete: boolean;
-    description: string;
-    position: number;
-}
-
-interface BranchDTO {
-    id: number;
-    name: string;
-    url: string;
-}
-
-interface CommentDTO {
-    id: number;
-    author: string;
-    created_at: string | null;
-    parent_id: number | null;
-    text: string | null;
-}
-
-interface CommitDTO {
-    id: number;
-    message: string;
-    created_at: string | null;
-    url: string;
-}
-
-interface PullRequestDTO {
-    id: number;
-    merged: boolean;
-    branch_name: string;
-    title: string;
-    review_status: string;
-    url: string;
-}
-
-interface StoryFullDTO {
-    id: number;
-    title: string;
-    description: string;
-    epic: string | null;
-    app_url: string | null;
-
-    tasks: TaskDTO[];
-    branches: BranchDTO[];
-    comments: CommentDTO[];
-    commits: CommitDTO[];
-    pull_requests: PullRequestDTO[];
-
-    story_type: string | null;
-    estimate: number | null;
-    labels: string[];
-
-    workflow_id: number | null;
-    workflow_state_id: number | null;
-    state_name: string | null;
-    state_type: string | null;
-
-    created_at: string | null;
-    updated_at: string | null;
-    updated_at_readable: string | null;
-}
-
-// ── Props ────────────────────────────────────────────────────────────────────
-
-interface Props {
-    story: StoryFullDTO | null;
-    loading: boolean;
-    error: string | null;
-    onClose: () => void;
-}
-
-// ── Tab definitions ──────────────────────────────────────────────────────────
-
-type TabId = "overview" | "tasks" | "git" | "comments";
+type TabId =
+    | "overview"
+    | "tasks"
+    | "git"
+    | "comments";
 
 const TABS: { id: TabId; label: string }[] = [
     { id: "overview", label: "Overview" },
@@ -86,13 +14,17 @@ const TABS: { id: TabId; label: string }[] = [
     { id: "comments", label: "Comments" },
 ];
 
-// ── Component ────────────────────────────────────────────────────────────────
+interface Props {
+    story: StoryFullDTO | null;
+    loading: boolean;
+    error: string | null;
+    onClose: () => void;
+}
 
 export function StoryDetailModal({ story, loading, error, onClose }: Props) {
     const overlayRef = useRef<HTMLDivElement>(null);
     const [activeTab, setActiveTab] = useState<TabId>("overview");
 
-    // Reset tab when a new story opens
     useEffect(() => { setActiveTab("overview"); }, [story?.id]);
 
     useEffect(() => {
@@ -396,43 +328,90 @@ function GitTab({ branches, commits, pullRequests }: {
 }
 
 function CommentsTab({ comments }: { comments: CommentDTO[] }) {
-    if (!comments || comments?.length === 0) {
+    if (!comments || comments.length === 0) {
         return <EmptyState icon="💬" message="No comments yet" />;
     }
 
-    // Build thread: top-level first, then replies
     const topLevel = comments.filter((c) => c.parent_id == null);
-    const replies = comments.filter((c) => c.parent_id != null);
+    const getReplies = (parentId: number) => comments.filter((c) => c.parent_id === parentId);
 
     return (
         <div className="sdm-tab-content">
+            <div className="sdm-comments-header">
+                {comments.length} Comment{comments.length !== 1 ? "s" : ""}
+            </div>
             <div className="sdm-comment-list">
                 {topLevel.map((c) => (
-                    <div key={c.id}>
-                        <CommentItem comment={c} />
-                        {replies.filter((r) => r.parent_id === c.id).map((r) => (
-                            <CommentItem key={r.id} comment={r} isReply />
-                        ))}
-                    </div>
+                    <CommentThread key={c.id} comment={c} replies={getReplies(c.id)} />
                 ))}
             </div>
         </div>
     );
 }
 
-function CommentItem({ comment, isReply = false }: { comment: CommentDTO; isReply?: boolean }) {
-    const initials = comment.author.slice(0, 2).toUpperCase();
+function CommentThread({ comment, replies }: { comment: CommentDTO; replies: CommentDTO[] }) {
+    const [expanded, setExpanded] = useState(false);
+
     return (
-        <div className={`sdm-comment${isReply ? " sdm-comment--reply" : ""}`}>
-            <div className="sdm-comment-avatar">{initials || "?"}</div>
+        <div className="sdm-comment-thread">
+            <CommentItem comment={comment} />
+            {replies.length > 0 && (
+                <div className="sdm-replies-section">
+                    <button className="sdm-replies-toggle" onClick={() => setExpanded(!expanded)}>
+                        <svg
+                            width="10"
+                            height="10"
+                            viewBox="0 0 10 10"
+                            fill="none"
+                            className={`sdm-replies-toggle-icon${expanded ? " sdm-replies-toggle-icon--expanded" : ""}`}
+                        >
+                            <path d="M2 3.5l3 3 3-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                        {expanded ? "Hide replies" : `View ${replies.length} repl${replies.length === 1 ? "y" : "ies"}`}
+                    </button>
+                    {expanded && (
+                        <div className="sdm-replies-list">
+                            {replies.map((r) => (
+                                <CommentItem key={r.id} comment={r} isReply />
+                            ))}
+                        </div>
+                    )}
+                </div>
+            )}
+        </div>
+    );
+}
+
+function CommentItem({ comment, isReply = false }: { comment: CommentDTO; isReply?: boolean }) {
+    const initials = comment.author
+        ? comment.author
+            .trim()
+            .split(/\s+/)
+            .slice(0, 2)
+            .map(word => word[0])
+            .join("")
+            .toUpperCase()
+        : "?";
+    return (
+        <div className="sdm-comment">
+            <div className={`sdm-comment-avatar${isReply ? " sdm-comment-avatar--small" : ""}`}>{initials}</div>
             <div className="sdm-comment-body">
                 <div className="sdm-comment-meta">
                     <span className="sdm-comment-author">{comment.author || "Unknown"}</span>
                     {comment.created_at && (
-                        <span className="sdm-comment-time">{formatDate(comment.created_at)}</span>
+                        <span className="sdm-comment-time">{formatRelativeTime(comment.created_at)}</span>
                     )}
                 </div>
-                <p className="sdm-comment-text">{comment.text || <em style={{ opacity: 0.4 }}>Empty comment</em>}</p>
+                <p className="sdm-comment-text">
+                    {comment.text
+                        ? comment.text.split(/(@\w+)/g).map((part, i) =>
+                            part.startsWith("@")
+                                ? <strong key={i} className="sdm-comment-mention">{part}</strong>
+                                : part
+                          )
+                        : <em style={{ opacity: 0.4 }}>Empty comment</em>
+                    }
+                </p>
             </div>
         </div>
     );
@@ -520,6 +499,27 @@ function formatDate(iso: string): string {
     } catch {
         return iso;
     }
+}
+
+function formatRelativeTime(iso: string | null): string {
+    if (!iso) return "";
+    const date = new Date(iso);
+    if (isNaN(date.getTime())) return "";
+    const diffMs = Date.now() - date.getTime();
+    const diffSec = Math.floor(diffMs / 1000);
+    const diffMin = Math.floor(diffSec / 60);
+    const diffHr = Math.floor(diffMin / 60);
+    const diffDay = Math.floor(diffHr / 24);
+    const diffWeek = Math.floor(diffDay / 7);
+    const diffMonth = Math.floor(diffDay / 30);
+    const diffYear = Math.floor(diffDay / 365);
+    if (diffSec < 60) return "just now";
+    if (diffMin < 60) return `${diffMin} minute${diffMin !== 1 ? "s" : ""} ago`;
+    if (diffHr < 24) return `${diffHr} hour${diffHr !== 1 ? "s" : ""} ago`;
+    if (diffDay < 7) return `${diffDay} day${diffDay !== 1 ? "s" : ""} ago`;
+    if (diffWeek < 5) return `${diffWeek} week${diffWeek !== 1 ? "s" : ""} ago`;
+    if (diffMonth < 12) return `${diffMonth} month${diffMonth !== 1 ? "s" : ""} ago`;
+    return `${diffYear} year${diffYear !== 1 ? "s" : ""} ago`;
 }
 
 function getStateColor(stateType: string | null): string {
@@ -890,40 +890,61 @@ const css = `
     }
     .sdm-pr-dot--merged { background: #a78bfa; }
 
-    /* ── Comments ── */
-    .sdm-comment-list { display: flex; flex-direction: column; gap: 12px; }
-    .sdm-comment {
-        display: flex;
-        gap: 12px;
-        padding: 12px;
-        background: rgba(255,255,255,0.03);
-        border: 1px solid rgba(255,255,255,0.06);
-        border-radius: 10px;
+    /* ── Comments (YouTube-style) ── */
+    .sdm-comments-header {
+        font-size: 16px;
+        font-weight: 600;
+        color: rgba(255,255,255,0.9);
+        padding-bottom: 16px;
+        margin-bottom: 4px;
+        border-bottom: 1px solid rgba(255,255,255,0.07);
     }
-    .sdm-comment--reply {
-        margin-left: 24px;
-        margin-top: -8px;
-        background: rgba(255,255,255,0.02);
-        border-top-left-radius: 4px;
-    }
+    .sdm-comment-list { display: flex; flex-direction: column; gap: 0; }
+    .sdm-comment-thread { padding: 12px 0; }
+    .sdm-comment { display: flex; gap: 12px; }
     .sdm-comment-avatar {
-        width: 30px;
-        height: 30px;
-        border-radius: 8px;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
         background: linear-gradient(135deg, #818cf8, #34d399);
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 11px;
+        font-size: 13px;
         font-weight: 700;
         color: #0f1117;
         flex-shrink: 0;
     }
+    .sdm-comment-avatar--small {
+        width: 24px;
+        height: 24px;
+        font-size: 10px;
+    }
     .sdm-comment-body { flex: 1; min-width: 0; }
-    .sdm-comment-meta { display: flex; align-items: baseline; gap: 8px; margin-bottom: 5px; }
-    .sdm-comment-author { font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.7); }
-    .sdm-comment-time { font-size: 11px; color: rgba(255,255,255,0.3); }
-    .sdm-comment-text { font-size: 13px; line-height: 1.6; color: rgba(255,255,255,0.7); margin: 0; }
+    .sdm-comment-meta { display: flex; align-items: baseline; gap: 8px; margin-bottom: 4px; }
+    .sdm-comment-author { font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.85); }
+    .sdm-comment-time { font-size: 12px; color: rgba(255,255,255,0.35); }
+    .sdm-comment-text { font-size: 14px; line-height: 1.5; color: rgba(255,255,255,0.7); margin: 0; }
+    .sdm-comment-mention { font-weight: 700; color: #818cf8; }
+    .sdm-replies-section { margin-left: 48px; margin-top: 4px; }
+    .sdm-replies-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: none;
+        border: none;
+        color: #818cf8;
+        font-family: 'DM Sans', sans-serif;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        padding: 6px 0;
+        transition: opacity 0.15s;
+    }
+    .sdm-replies-toggle:hover { opacity: 0.75; }
+    .sdm-replies-toggle-icon { transition: transform 0.2s ease; }
+    .sdm-replies-toggle-icon--expanded { transform: rotate(180deg); }
+    .sdm-replies-list { display: flex; flex-direction: column; gap: 12px; margin-top: 8px; }
 
     /* ── Empty state ── */
     .sdm-empty {
