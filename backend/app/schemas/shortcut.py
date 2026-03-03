@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from typing import List, Optional
-from pydantic import BaseModel
 from datetime import datetime
+
+from pydantic import BaseModel
+
 
 class TaskDTO(BaseModel):
     id: int
@@ -10,23 +11,27 @@ class TaskDTO(BaseModel):
     description: str
     position: int
 
+
 class BranchDTO(BaseModel):
     id: int
     name: str
     url: str
 
+
 class CommentDTO(BaseModel):
     id: int
     author: str
-    created_at: Optional[datetime]
-    parent_id: Optional[int]
-    text: Optional[str]
+    created_at: datetime | None
+    parent_id: int | None
+    text: str | None
+
 
 class CommitDTO(BaseModel):
     id: int
     message: str
-    created_at: Optional[datetime]
+    created_at: datetime | None
     url: str
+
 
 class PullRequestDTO(BaseModel):
     id: int
@@ -36,51 +41,54 @@ class PullRequestDTO(BaseModel):
     review_status: str
     url: str
 
+
 class StoryDTO(BaseModel):
     id: int
-    title: str
-    app_url: Optional[str] = None
+    title: str | None = None
+    app_url: str | None = None
 
-    story_type: Optional[str] = None
-    estimate: Optional[int] = None
-    labels: List[str] = []
+    story_type: str | None = None
+    estimate: int | None = None
+    labels: list[str] = []
 
-    workflow_id: Optional[int] = None
-    workflow_state_id: Optional[int] = None
-    state_name: Optional[str] = None
-    state_type: Optional[str] = None
+    workflow_id: int | None = None
+    workflow_state_id: int | None = None
+    state_name: str | None = None
+    state_type: str | None = None
 
-    updated_at: Optional[datetime] = None
-    updated_at_readable: Optional[str] = None
+    updated_at: datetime | None = None
+    updated_at_readable: str | None = None
+
 
 class StoryFullDTO(BaseModel):
     id: int
     title: str
     description: str
-    epic: Optional[str] = None
-    app_url: Optional[str] = None
+    epic: str | None = None
+    app_url: str | None = None
 
-    tasks: List[TaskDTO]
+    tasks: list[TaskDTO]
 
-    branches: List[BranchDTO]
-    comments: List[CommentDTO]
-    commits: List[CommitDTO]
-    pull_requests: List[PullRequestDTO]
+    branches: list[BranchDTO]
+    comments: list[CommentDTO]
+    commits: list[CommitDTO]
+    pull_requests: list[PullRequestDTO]
 
-    story_type: Optional[str] = None
-    estimate: Optional[int] = None
-    labels: List[str] = []
+    story_type: str | None = None
+    estimate: int | None = None
+    labels: list[str] = []
 
-    workflow_id: Optional[int] = None
-    workflow_state_id: Optional[int] = None
-    state_name: Optional[str] = None
-    state_type: Optional[str] = None
+    workflow_id: int | None = None
+    workflow_state_id: int | None = None
+    state_name: str | None = None
+    state_type: str | None = None
 
-    created_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
-    updated_at_readable: Optional[str] = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
+    updated_at_readable: str | None = None
+
 
 class StoryListResponse(BaseModel):
-    data: List[StoryDTO]
-    next: Optional[str] = None
-    total: Optional[int] = None
+    data: list[StoryDTO]
+    next: str | None = None
+    total: int | None = None
