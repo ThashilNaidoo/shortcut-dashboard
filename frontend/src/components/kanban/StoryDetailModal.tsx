@@ -101,7 +101,7 @@ export function StoryDetailModal({ story, loading, error, onClose }: Props) {
                                         </span>
                                     )}
                                     {typeof story.estimate === "number" && (
-                                        <span className="sdm-estimate">{story.estimate} pts</span>
+                                        <span className="sdm-estimate">EST:{story.estimate}</span>
                                     )}
                                 </div>
                                 <h2 className="sdm-title">{story.title}</h2>
@@ -212,7 +212,7 @@ function OverviewTab({ story }: { story: StoryFullDTO }) {
                     rel="noreferrer"
                     className="sdm-external-link"
                 >
-                    Open in Shortcut
+                    &gt; Open in Shortcut
                     <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
                         <path d="M2 10L10 2M10 2H4M10 2v6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
@@ -328,23 +328,53 @@ function GitTab({ branches, commits, pullRequests }: {
 }
 
 function CommentsTab({ comments }: { comments: CommentDTO[] }) {
-    if (!comments || comments.length === 0) {
-        return <EmptyState icon="💬" message="No comments yet" />;
-    }
+    const [draft, setDraft] = useState("");
 
-    const topLevel = comments.filter((c) => c.parent_id == null);
-    const getReplies = (parentId: number) => comments.filter((c) => c.parent_id === parentId);
+    const topLevel = (comments ?? []).filter((c) => c.parent_id == null);
+    const getReplies = (parentId: number) => (comments ?? []).filter((c) => c.parent_id === parentId);
+
+    function handleSubmit() {
+        // TODO: wire up to backend
+        console.log("submit comment:", draft);
+    }
 
     return (
         <div className="sdm-tab-content">
-            <div className="sdm-comments-header">
-                {comments.length} Comment{comments.length !== 1 ? "s" : ""}
+            {/* Input */}
+            <div className="sdm-comment-compose">
+                <textarea
+                    className="sdm-comment-input"
+                    placeholder="> ADD COMMENT..."
+                    value={draft}
+                    onChange={(e) => setDraft(e.target.value)}
+                    rows={3}
+                />
+                <div className="sdm-comment-compose-footer">
+                    <button
+                        className="sdm-comment-submit"
+                        onClick={handleSubmit}
+                        disabled={!draft.trim()}
+                    >
+                        &gt; SUBMIT
+                    </button>
+                </div>
             </div>
-            <div className="sdm-comment-list">
-                {topLevel.map((c) => (
-                    <CommentThread key={c.id} comment={c} replies={getReplies(c.id)} />
-                ))}
-            </div>
+
+            {/* List */}
+            {comments && comments.length > 0 ? (
+                <>
+                    <div className="sdm-comments-header">
+                        {comments.length} Comment{comments.length !== 1 ? "s" : ""}
+                    </div>
+                    <div className="sdm-comment-list">
+                        {topLevel.map((c) => (
+                            <CommentThread key={c.id} comment={c} replies={getReplies(c.id)} />
+                        ))}
+                    </div>
+                </>
+            ) : (
+                <EmptyState icon="💬" message="No comments yet" />
+            )}
         </div>
     );
 }
@@ -525,7 +555,7 @@ function formatRelativeTime(iso: string | null): string {
 function getStateColor(stateType: string | null): string {
     switch (stateType) {
         case "started": return "#34d399";
-        case "done": return "#818cf8";
+        case "done": return "#4db8ff";
         case "unstarted": return "#94a3b8";
         default: return "#64748b";
     }
@@ -534,26 +564,27 @@ function getStateColor(stateType: string | null): string {
 // ── CSS ──────────────────────────────────────────────────────────────────────
 
 const css = `
-    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
-
     .sdm-overlay {
         position: fixed;
         inset: 0;
-        background: rgba(0, 0, 0, 0.7);
-        backdrop-filter: blur(6px);
-        -webkit-backdrop-filter: blur(6px);
+        background: rgba(0,0,0,0.82);
+        backdrop-filter: blur(3px);
+        -webkit-backdrop-filter: blur(3px);
         display: flex;
         align-items: center;
         justify-content: center;
         z-index: 1000;
         padding: 24px;
-        font-family: 'DM Sans', sans-serif;
+        font-family: 'Courier New', 'Courier', monospace;
     }
 
     .sdm-panel {
-        background: #0f1117;
-        border: 1px solid rgba(255,255,255,0.09);
-        border-radius: 20px;
+        background: #111d2e;
+        border-top: 2px solid #4db8ff;
+        border-right: 1px solid rgba(77,184,255,0.22);
+        border-bottom: 1px solid rgba(77,184,255,0.22);
+        border-left: 1px solid rgba(77,184,255,0.22);
+        border-radius: 0;
         width: 100%;
         max-width: 680px;
         max-height: 88vh;
@@ -561,29 +592,29 @@ const css = `
         flex-direction: column;
         position: relative;
         overflow: hidden;
-        box-shadow: 0 32px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.04) inset;
+        box-shadow: 0 0 48px rgba(77,184,255,0.07), 0 24px 64px rgba(0,0,0,0.75);
     }
 
     .sdm-close {
         position: absolute;
-        top: 18px;
-        right: 18px;
-        background: rgba(255,255,255,0.06);
-        border: 1px solid rgba(255,255,255,0.09);
-        border-radius: 8px;
+        top: 16px;
+        right: 16px;
+        background: rgba(77,184,255,0.06);
+        border: 1px solid rgba(77,184,255,0.22);
+        border-radius: 0;
         cursor: pointer;
-        color: rgba(255,255,255,0.5);
-        width: 30px;
-        height: 30px;
+        color: rgba(77,184,255,0.55);
+        width: 28px;
+        height: 28px;
         display: flex;
         align-items: center;
         justify-content: center;
         z-index: 10;
-        transition: background 0.15s, color 0.15s;
+        transition: background 0.12s, color 0.12s;
     }
     .sdm-close:hover {
-        background: rgba(255,255,255,0.12);
-        color: rgba(255,255,255,0.9);
+        background: rgba(77,184,255,0.14);
+        color: #4db8ff;
     }
 
     /* ── Center states ── */
@@ -593,144 +624,160 @@ const css = `
         align-items: center;
         justify-content: center;
         padding: 64px 32px;
-        gap: 8px;
-        color: rgba(255,255,255,0.6);
-        font-size: 14px;
+        gap: 10px;
+        color: rgba(77,184,255,0.7);
+        font-size: 12px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
     }
     .sdm-spinner {
-        width: 28px;
-        height: 28px;
-        border: 2px solid rgba(255,255,255,0.1);
-        border-top-color: rgba(255,255,255,0.5);
-        border-radius: 50%;
-        animation: sdm-spin 0.7s linear infinite;
+        width: 26px;
+        height: 26px;
+        border: 2px solid rgba(77,184,255,0.12);
+        border-top-color: #4db8ff;
+        border-radius: 0;
+        animation: sdm-spin 0.8s linear infinite;
     }
     @keyframes sdm-spin { to { transform: rotate(360deg); } }
     .sdm-error-icon {
-        width: 36px;
-        height: 36px;
-        border-radius: 50%;
-        background: rgba(248,113,113,0.12);
-        border: 1px solid rgba(248,113,113,0.3);
+        width: 34px;
+        height: 34px;
+        border-radius: 0;
+        background: rgba(248,113,113,0.08);
+        border: 1px solid rgba(248,113,113,0.35);
         display: flex;
         align-items: center;
         justify-content: center;
         color: #f87171;
         font-weight: 700;
-        font-size: 18px;
+        font-size: 16px;
     }
 
     /* ── Header ── */
     .sdm-header {
-        padding: 28px 28px 0;
+        padding: 20px 20px 0;
         flex-shrink: 0;
+        background: rgba(77,184,255,0.02);
+        border-bottom: 1px solid rgba(77,184,255,0.12);
     }
     .sdm-header-top {
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 7px;
         flex-wrap: wrap;
         margin-bottom: 10px;
     }
     .sdm-story-id {
-        font-size: 12px;
-        font-weight: 600;
-        color: rgba(255,255,255,0.3);
-        font-family: 'DM Mono', monospace;
-        letter-spacing: 0.04em;
+        font-size: 13px;
+        font-weight: 700;
+        color: #4db8ff;
+        letter-spacing: 0.1em;
     }
     .sdm-type-badge {
         font-size: 11px;
-        font-weight: 600;
-        letter-spacing: 0.06em;
+        font-weight: 700;
+        letter-spacing: 0.1em;
         text-transform: uppercase;
-        padding: 3px 8px;
-        border-radius: 6px;
+        padding: 2px 6px;
+        border-radius: 0;
         border: 1px solid;
     }
-    .sdm-type-badge[data-type="feature"]  { color: #60a5fa; border-color: rgba(96,165,250,0.3); background: rgba(96,165,250,0.08); }
-    .sdm-type-badge[data-type="bug"]      { color: #f87171; border-color: rgba(248,113,113,0.3); background: rgba(248,113,113,0.08); }
-    .sdm-type-badge[data-type="chore"]    { color: #94a3b8; border-color: rgba(148,163,184,0.3); background: rgba(148,163,184,0.08); }
-    .sdm-type-badge                        { color: #a78bfa; border-color: rgba(167,139,250,0.3); background: rgba(167,139,250,0.08); }
+    .sdm-type-badge[data-type="feature"] { color: #4db8ff; border-color: rgba(77,184,255,0.4); background: rgba(77,184,255,0.06); }
+    .sdm-type-badge[data-type="bug"]     { color: #f87171; border-color: rgba(248,113,113,0.4); background: rgba(248,113,113,0.06); }
+    .sdm-type-badge[data-type="chore"]   { color: rgba(240,232,204,0.7); border-color: rgba(240,232,204,0.3); background: transparent; }
+    .sdm-type-badge                       { color: #4db8ff; border-color: rgba(77,184,255,0.4); background: rgba(77,184,255,0.06); }
 
     .sdm-state-badge {
         font-size: 11px;
-        font-weight: 600;
-        letter-spacing: 0.05em;
+        font-weight: 700;
+        letter-spacing: 0.1em;
         text-transform: uppercase;
-        padding: 3px 8px;
-        border-radius: 6px;
+        padding: 2px 6px;
+        border-radius: 0;
         border: 1px solid;
     }
     .sdm-estimate {
         font-size: 11px;
-        color: rgba(255,255,255,0.4);
-        background: rgba(255,255,255,0.06);
-        border: 1px solid rgba(255,255,255,0.08);
-        border-radius: 6px;
-        padding: 3px 8px;
-        font-family: 'DM Mono', monospace;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: #4de0a8;
+        background: rgba(77,224,168,0.06);
+        border: 1px solid rgba(77,224,168,0.28);
+        border-radius: 0;
+        padding: 2px 6px;
     }
     .sdm-title {
-        font-size: 19px;
+        font-size: 17px;
         font-weight: 700;
-        line-height: 1.35;
-        color: rgba(255,255,255,0.95);
-        margin: 0 0 10px;
+        line-height: 1.45;
+        color: #f0e8cc;
+        margin: 0 0 12px;
         padding-right: 36px;
+        letter-spacing: 0.03em;
+        text-transform: uppercase;
     }
     .sdm-epic {
         display: inline-flex;
         align-items: center;
         gap: 5px;
-        font-size: 12px;
-        color: #fbbf24;
-        background: rgba(251,191,36,0.08);
-        border: 1px solid rgba(251,191,36,0.2);
-        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: #4db8ff;
+        background: rgba(77,184,255,0.06);
+        border: 1px solid rgba(77,184,255,0.22);
+        border-radius: 0;
         padding: 3px 8px;
-        margin-bottom: 16px;
+        margin-bottom: 12px;
     }
 
     /* ── Tab bar ── */
     .sdm-tabbar {
         display: flex;
-        gap: 2px;
-        padding: 0 28px;
-        border-bottom: 1px solid rgba(255,255,255,0.07);
+        gap: 0;
+        padding: 0 20px;
+        border-bottom: 1px solid rgba(77,184,255,0.15);
         flex-shrink: 0;
+        background: rgba(77,184,255,0.01);
     }
     .sdm-tab {
         background: none;
         border: none;
         border-bottom: 2px solid transparent;
-        color: rgba(255,255,255,0.4);
-        font-family: 'DM Sans', sans-serif;
-        font-size: 13px;
-        font-weight: 500;
+        color: rgba(77,184,255,0.6);
+        font-family: 'Courier New', 'Courier', monospace;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.13em;
+        text-transform: uppercase;
         cursor: pointer;
-        padding: 10px 12px;
+        padding: 10px 14px;
         display: flex;
         align-items: center;
         gap: 6px;
-        transition: color 0.15s;
+        transition: color 0.12s;
         margin-bottom: -1px;
     }
-    .sdm-tab:hover { color: rgba(255,255,255,0.7); }
+    .sdm-tab:hover { color: rgba(77,184,255,0.9); }
     .sdm-tab--active {
-        color: rgba(255,255,255,0.95);
-        border-bottom-color: #818cf8;
+        color: #4db8ff;
+        border-bottom-color: #4db8ff;
     }
     .sdm-tab-badge {
-        font-size: 10px;
-        background: rgba(255,255,255,0.1);
-        border-radius: 999px;
-        padding: 1px 6px;
-        font-weight: 600;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        background: rgba(77,184,255,0.1);
+        border: 1px solid rgba(77,184,255,0.2);
+        border-radius: 0;
+        padding: 0 4px;
     }
     .sdm-tab--active .sdm-tab-badge {
-        background: rgba(129,140,248,0.25);
-        color: #a5b4fc;
+        background: rgba(77,184,255,0.2);
+        border-color: rgba(77,184,255,0.45);
+        color: #4db8ff;
     }
 
     /* ── Scrollable body ── */
@@ -739,110 +786,133 @@ const css = `
         flex: 1;
         min-height: 0;
     }
-    .sdm-body::-webkit-scrollbar { width: 5px; }
+    .sdm-body::-webkit-scrollbar { width: 3px; }
     .sdm-body::-webkit-scrollbar-track { background: transparent; }
-    .sdm-body::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 99px; }
+    .sdm-body::-webkit-scrollbar-thumb { background: rgba(77,184,255,0.2); border-radius: 0; }
 
     .sdm-tab-content {
-        padding: 24px 28px 28px;
+        padding: 20px;
         display: flex;
         flex-direction: column;
-        gap: 24px;
+        gap: 20px;
     }
 
     /* ── Sections ── */
     .sdm-section { display: flex; flex-direction: column; gap: 10px; }
     .sdm-section-label {
-        font-size: 10px;
+        font-size: 11px;
         font-weight: 700;
-        letter-spacing: 0.1em;
+        letter-spacing: 0.14em;
         text-transform: uppercase;
-        color: rgba(255,255,255,0.3);
+        color: #4db8ff;
+        opacity: 0.85;
+        padding-bottom: 5px;
+        border-bottom: 1px solid rgba(77,184,255,0.12);
     }
 
     /* ── Description ── */
     .sdm-description {
-        font-size: 14px;
-        line-height: 1.7;
-        color: rgba(255,255,255,0.7);
+        font-size: 13px;
+        line-height: 1.8;
+        color: rgba(240,232,204,0.9);
         margin: 0;
         white-space: pre-wrap;
+        letter-spacing: 0.02em;
     }
 
     /* ── Chips ── */
-    .sdm-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+    .sdm-chips { display: flex; flex-wrap: wrap; gap: 5px; }
     .sdm-chip {
-        font-size: 12px;
-        color: rgba(255,255,255,0.65);
-        background: rgba(255,255,255,0.05);
-        border: 1px solid rgba(255,255,255,0.1);
-        border-radius: 6px;
-        padding: 3px 10px;
+        font-size: 11px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: rgba(240,232,204,0.78);
+        background: transparent;
+        border: 1px solid rgba(240,232,204,0.18);
+        border-radius: 0;
+        padding: 2px 6px;
     }
 
     /* ── Detail grid ── */
-    .sdm-details-grid { display: flex; flex-direction: column; gap: 8px; }
+    .sdm-details-grid { display: flex; flex-direction: column; gap: 6px; }
     .sdm-detail-row { display: flex; align-items: baseline; gap: 12px; }
     .sdm-detail-key {
-        font-size: 12px;
-        color: rgba(255,255,255,0.35);
+        font-size: 11px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: rgba(77,184,255,0.72);
         width: 110px;
         flex-shrink: 0;
     }
-    .sdm-detail-val { font-size: 13px; color: rgba(255,255,255,0.8); }
+    .sdm-detail-val {
+        font-size: 13px;
+        color: rgba(240,232,204,0.92);
+        letter-spacing: 0.03em;
+    }
 
     /* ── External link ── */
     .sdm-external-link {
         display: inline-flex;
         align-items: center;
         gap: 6px;
-        font-size: 13px;
-        font-weight: 500;
-        color: rgba(255,255,255,0.5);
-        background: rgba(255,255,255,0.04);
-        border: 1px solid rgba(255,255,255,0.1);
-        border-radius: 8px;
-        padding: 8px 14px;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: #4de0a8;
+        background: transparent;
+        border: 1px solid rgba(77,224,168,0.3);
+        border-radius: 0;
+        padding: 6px 12px;
         text-decoration: none;
-        transition: background 0.15s, color 0.15s;
+        transition: background 0.12s, border-color 0.12s;
         width: fit-content;
     }
     .sdm-external-link:hover {
-        background: rgba(255,255,255,0.08);
-        color: rgba(255,255,255,0.85);
+        background: rgba(77,224,168,0.06);
+        border-color: rgba(77,224,168,0.55);
     }
 
     /* ── Tasks ── */
     .sdm-tasks-progress { display: flex; flex-direction: column; gap: 6px; }
     .sdm-progress-bar {
-        height: 4px;
-        background: rgba(255,255,255,0.08);
-        border-radius: 99px;
+        height: 3px;
+        background: rgba(77,184,255,0.1);
+        border-radius: 0;
         overflow: hidden;
     }
     .sdm-progress-fill {
         height: 100%;
-        background: linear-gradient(90deg, #818cf8, #34d399);
-        border-radius: 99px;
+        background: #4db8ff;
+        border-radius: 0;
         transition: width 0.4s ease;
     }
-    .sdm-progress-label { font-size: 12px; color: rgba(255,255,255,0.35); }
-    .sdm-task-list { display: flex; flex-direction: column; gap: 4px; }
+    .sdm-progress-label {
+        font-size: 11px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: rgba(77,184,255,0.7);
+    }
+    .sdm-task-list { display: flex; flex-direction: column; gap: 3px; }
     .sdm-task-item {
         display: flex;
         align-items: flex-start;
         gap: 10px;
-        padding: 9px 12px;
-        background: rgba(255,255,255,0.03);
-        border: 1px solid rgba(255,255,255,0.06);
-        border-radius: 8px;
+        padding: 8px 10px;
+        background: rgba(77,184,255,0.02);
+        border: 1px solid rgba(77,184,255,0.12);
+        border-radius: 0;
+        box-shadow: inset 3px 0 0 0 rgba(77,184,255,0.28);
     }
-    .sdm-task-item--done .sdm-task-desc { opacity: 0.35; text-decoration: line-through; }
+    .sdm-task-item--done {
+        box-shadow: inset 3px 0 0 0 #4de0a8;
+    }
+    .sdm-task-item--done .sdm-task-desc { opacity: 0.3; text-decoration: line-through; }
     .sdm-task-check {
-        width: 16px;
-        height: 16px;
-        border-radius: 4px;
-        border: 1.5px solid rgba(255,255,255,0.2);
+        width: 14px;
+        height: 14px;
+        border-radius: 0;
+        border: 1px solid rgba(77,184,255,0.35);
         flex-shrink: 0;
         display: flex;
         align-items: center;
@@ -850,111 +920,220 @@ const css = `
         margin-top: 1px;
     }
     .sdm-task-item--done .sdm-task-check {
-        background: #34d399;
-        border-color: #34d399;
-        color: #0f1117;
+        background: #4de0a8;
+        border-color: #4de0a8;
+        color: #050e08;
     }
-    .sdm-task-desc { font-size: 13px; line-height: 1.5; color: rgba(255,255,255,0.8); }
+    .sdm-task-desc {
+        font-size: 13px;
+        line-height: 1.6;
+        color: rgba(240,232,204,0.92);
+        letter-spacing: 0.02em;
+    }
 
     /* ── Git ── */
-    .sdm-git-list { display: flex; flex-direction: column; gap: 4px; }
+    .sdm-git-list { display: flex; flex-direction: column; gap: 3px; }
     .sdm-git-item {
         display: flex;
         align-items: center;
         justify-content: space-between;
         gap: 10px;
-        padding: 10px 12px;
-        background: rgba(255,255,255,0.03);
-        border: 1px solid rgba(255,255,255,0.06);
-        border-radius: 8px;
+        padding: 8px 10px;
+        background: rgba(77,184,255,0.02);
+        border: 1px solid rgba(77,184,255,0.12);
+        border-radius: 0;
+        box-shadow: inset 3px 0 0 0 rgba(77,184,255,0.28);
     }
     .sdm-git-item--link {
         text-decoration: none;
         color: inherit;
-        transition: background 0.15s, border-color 0.15s;
+        transition: background 0.12s, border-color 0.12s;
     }
     .sdm-git-item--link:hover {
-        background: rgba(255,255,255,0.06);
-        border-color: rgba(255,255,255,0.12);
+        background: rgba(77,184,255,0.05);
+        border-color: rgba(77,184,255,0.3);
     }
     .sdm-git-item-left { display: flex; align-items: center; gap: 10px; min-width: 0; }
-    .sdm-git-item-title { font-size: 13px; color: rgba(255,255,255,0.8); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .sdm-git-item-meta { font-size: 11px; color: rgba(255,255,255,0.35); margin-top: 2px; }
-    .sdm-mono { font-family: 'DM Mono', monospace; font-size: 12px; }
-    .sdm-pr-dot {
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        flex-shrink: 0;
-        background: #34d399;
+    .sdm-git-item-title {
+        font-size: 13px;
+        color: rgba(240,232,204,0.92);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        letter-spacing: 0.02em;
     }
-    .sdm-pr-dot--merged { background: #a78bfa; }
+    .sdm-git-item-meta {
+        font-size: 11px;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: rgba(77,184,255,0.65);
+        margin-top: 2px;
+    }
+    .sdm-mono { font-family: 'Courier New', 'Courier', monospace; font-size: 13px; }
+    .sdm-pr-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 0;
+        flex-shrink: 0;
+        background: #4de0a8;
+    }
+    .sdm-pr-dot--merged { background: #4db8ff; }
 
-    /* ── Comments (YouTube-style) ── */
+    /* ── Comment compose ── */
+    .sdm-comment-compose {
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+        border: 1px solid rgba(77,184,255,0.25);
+        border-radius: 0;
+        box-shadow: inset 3px 0 0 0 #4db8ff;
+    }
+    .sdm-comment-input {
+        background: rgba(77,184,255,0.03);
+        border: none;
+        border-bottom: 1px solid rgba(77,184,255,0.15);
+        border-radius: 0;
+        color: #f0e8cc;
+        font-family: 'Courier New', 'Courier', monospace;
+        font-size: 13px;
+        line-height: 1.6;
+        letter-spacing: 0.02em;
+        padding: 10px 12px;
+        resize: none;
+        width: 100%;
+        box-sizing: border-box;
+        outline: none;
+        transition: background 0.12s;
+    }
+    .sdm-comment-input::placeholder {
+        color: rgba(77,184,255,0.3);
+        letter-spacing: 0.1em;
+    }
+    .sdm-comment-input:focus {
+        background: rgba(77,184,255,0.06);
+    }
+    .sdm-comment-compose-footer {
+        display: flex;
+        justify-content: flex-end;
+        padding: 6px 8px;
+        background: rgba(77,184,255,0.02);
+    }
+    .sdm-comment-submit {
+        background: transparent;
+        border: 1px solid rgba(77,184,255,0.35);
+        border-radius: 0;
+        color: #4db8ff;
+        font-family: 'Courier New', 'Courier', monospace;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        padding: 5px 14px;
+        cursor: pointer;
+        transition: background 0.12s, border-color 0.12s, color 0.12s;
+    }
+    .sdm-comment-submit:hover:not(:disabled) {
+        background: rgba(77,184,255,0.1);
+        border-color: #4db8ff;
+        color: #7ecfff;
+    }
+    .sdm-comment-submit:disabled {
+        opacity: 0.3;
+        cursor: default;
+    }
+
+    /* ── Comments ── */
     .sdm-comments-header {
-        font-size: 16px;
-        font-weight: 600;
-        color: rgba(255,255,255,0.9);
-        padding-bottom: 16px;
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: #4db8ff;
+        padding-bottom: 12px;
         margin-bottom: 4px;
-        border-bottom: 1px solid rgba(255,255,255,0.07);
+        border-bottom: 1px solid rgba(77,184,255,0.15);
     }
     .sdm-comment-list { display: flex; flex-direction: column; gap: 0; }
-    .sdm-comment-thread { padding: 12px 0; }
-    .sdm-comment { display: flex; gap: 12px; }
+    .sdm-comment-thread {
+        padding: 10px 0;
+        border-bottom: 1px solid rgba(77,184,255,0.07);
+    }
+    .sdm-comment { display: flex; gap: 10px; }
     .sdm-comment-avatar {
-        width: 36px;
-        height: 36px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, #818cf8, #34d399);
+        width: 28px;
+        height: 28px;
+        border-radius: 0;
+        background: rgba(77,184,255,0.1);
+        border: 1px solid rgba(77,184,255,0.3);
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 13px;
+        font-size: 11px;
         font-weight: 700;
-        color: #0f1117;
+        letter-spacing: 0.04em;
+        color: #4db8ff;
         flex-shrink: 0;
     }
     .sdm-comment-avatar--small {
-        width: 24px;
-        height: 24px;
-        font-size: 10px;
+        width: 20px;
+        height: 20px;
+        font-size: 9px;
     }
     .sdm-comment-body { flex: 1; min-width: 0; }
     .sdm-comment-meta { display: flex; align-items: baseline; gap: 8px; margin-bottom: 4px; }
-    .sdm-comment-author { font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.85); }
-    .sdm-comment-time { font-size: 12px; color: rgba(255,255,255,0.35); }
-    .sdm-comment-text { font-size: 14px; line-height: 1.5; color: rgba(255,255,255,0.7); margin: 0; }
-    .sdm-comment-mention { font-weight: 700; color: #818cf8; }
-    .sdm-replies-section { margin-left: 48px; margin-top: 4px; }
+    .sdm-comment-author {
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: #4db8ff;
+    }
+    .sdm-comment-time {
+        font-size: 11px;
+        letter-spacing: 0.05em;
+        color: rgba(77,184,255,0.6);
+    }
+    .sdm-comment-text {
+        font-size: 13px;
+        line-height: 1.7;
+        color: rgba(240,232,204,0.88);
+        margin: 0;
+        letter-spacing: 0.02em;
+    }
+    .sdm-comment-mention { font-weight: 700; color: #4db8ff; }
+    .sdm-replies-section { margin-left: 38px; margin-top: 6px; }
     .sdm-replies-toggle {
         display: inline-flex;
         align-items: center;
         gap: 6px;
         background: none;
         border: none;
-        color: #818cf8;
-        font-family: 'DM Sans', sans-serif;
-        font-size: 13px;
-        font-weight: 600;
+        color: rgba(77,184,255,0.75);
+        font-family: 'Courier New', 'Courier', monospace;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
         cursor: pointer;
-        padding: 6px 0;
-        transition: opacity 0.15s;
+        padding: 4px 0;
+        transition: color 0.12s;
     }
-    .sdm-replies-toggle:hover { opacity: 0.75; }
+    .sdm-replies-toggle:hover { color: #7ecfff; }
     .sdm-replies-toggle-icon { transition: transform 0.2s ease; }
     .sdm-replies-toggle-icon--expanded { transform: rotate(180deg); }
-    .sdm-replies-list { display: flex; flex-direction: column; gap: 12px; margin-top: 8px; }
+    .sdm-replies-list { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
 
     /* ── Empty state ── */
     .sdm-empty {
         display: flex;
         flex-direction: column;
         align-items: center;
-        gap: 8px;
-        padding: 48px 24px;
-        color: rgba(255,255,255,0.25);
-        font-size: 13px;
+        gap: 6px;
+        padding: 40px 24px;
+        color: rgba(77,184,255,0.5);
+        font-size: 12px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
     }
-    .sdm-empty-icon { font-size: 28px; opacity: 0.4; }
+    .sdm-empty-icon { font-size: 24px; opacity: 0.45; }
 `;

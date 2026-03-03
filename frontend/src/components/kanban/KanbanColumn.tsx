@@ -2,18 +2,18 @@ import type { StoryDTO } from "../../api/types";
 import { StoryCard } from "./StoryCard";
 
 const MONO = "'Courier New', 'Courier', monospace";
-const AMBER = "#f5c842";
+const BLUE = "#4db8ff";
 
 export function KanbanColumn({ title, items }: { title: string; items: StoryDTO[] }) {
     return (
         <div
             style={{
-                borderTop: `2px solid ${AMBER}`,
-                borderRight: "1px solid rgba(245,200,66,0.2)",
-                borderBottom: "1px solid rgba(245,200,66,0.2)",
-                borderLeft: "1px solid rgba(245,200,66,0.2)",
+                borderTop: `2px solid ${BLUE}`,
+                borderRight: "1px solid rgba(77,184,255,0.2)",
+                borderBottom: "1px solid rgba(77,184,255,0.2)",
+                borderLeft: "1px solid rgba(77,184,255,0.2)",
                 borderRadius: 0,
-                background: "rgba(245,200,66,0.015)",
+                background: "rgba(77,184,255,0.015)",
                 display: "flex",
                 flexDirection: "column",
                 height: "calc(100vh - 140px)",
@@ -25,13 +25,13 @@ export function KanbanColumn({ title, items }: { title: string; items: StoryDTO[
             <div
                 style={{
                     padding: "10px 14px",
-                    borderBottom: "1px solid rgba(245,200,66,0.18)",
+                    borderBottom: "1px solid rgba(77,184,255,0.18)",
                     display: "flex",
                     justifyContent: "space-between",
                     alignItems: "center",
                     gap: 10,
                     flex: "0 0 auto",
-                    background: "rgba(245,200,66,0.04)",
+                    background: "rgba(77,184,255,0.04)",
                 }}
             >
                 <div
@@ -40,7 +40,7 @@ export function KanbanColumn({ title, items }: { title: string; items: StoryDTO[
                         fontSize: 10,
                         letterSpacing: "0.14em",
                         textTransform: "uppercase",
-                        color: AMBER,
+                        color: BLUE,
                     }}
                 >
                     {title}
@@ -48,7 +48,7 @@ export function KanbanColumn({ title, items }: { title: string; items: StoryDTO[
                 <div
                     style={{
                         fontSize: 11,
-                        color: AMBER,
+                        color: BLUE,
                         opacity: 0.65,
                         letterSpacing: "0.06em",
                     }}

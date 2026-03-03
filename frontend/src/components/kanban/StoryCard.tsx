@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom";
 import type { StoryDTO } from "../../api/types";
 
 const MONO = "'Courier New', 'Courier', monospace";
-const AMBER = "#f5c842";
+const BLUE = "#4db8ff";
 const TEAL = "#4de0a8";
 const CREAM = "#f0e8cc";
 
@@ -18,14 +18,14 @@ export function StoryCard({ t }: { t: StoryDTO }) {
             onClick={() => navigate(`/stories/${t.id}`)}
             onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") navigate(`/stories/${t.id}`); }}
             style={{
-                border: "1px solid rgba(245,200,66,0.18)",
-                boxShadow: `inset 3px 0 0 0 ${AMBER}`,
+                border: "1px solid rgba(77,184,255,0.18)",
+                boxShadow: `inset 3px 0 0 0 ${BLUE}`,
                 borderRadius: 0,
                 padding: "10px 12px",
                 display: "flex",
                 flexDirection: "column",
                 gap: 8,
-                background: "rgba(245,200,66,0.025)",
+                background: "rgba(77,184,255,0.025)",
                 cursor: "pointer",
                 fontFamily: MONO,
                 color: CREAM,
@@ -33,21 +33,21 @@ export function StoryCard({ t }: { t: StoryDTO }) {
             }}
             onMouseEnter={(e) => {
                 const el = e.currentTarget as HTMLDivElement;
-                el.style.background = "rgba(245,200,66,0.06)";
-                el.style.borderColor = "rgba(245,200,66,0.45)";
-                el.style.boxShadow = `inset 3px 0 0 0 ${AMBER}, 0 0 16px rgba(245,200,66,0.08)`;
+                el.style.background = "rgba(77,184,255,0.06)";
+                el.style.borderColor = "rgba(77,184,255,0.45)";
+                el.style.boxShadow = `inset 3px 0 0 0 ${BLUE}, 0 0 16px rgba(77,184,255,0.08)`;
             }}
             onMouseLeave={(e) => {
                 const el = e.currentTarget as HTMLDivElement;
-                el.style.background = "rgba(245,200,66,0.025)";
-                el.style.borderColor = "rgba(245,200,66,0.18)";
-                el.style.boxShadow = `inset 3px 0 0 0 ${AMBER}`;
+                el.style.background = "rgba(77,184,255,0.025)";
+                el.style.borderColor = "rgba(77,184,255,0.18)";
+                el.style.boxShadow = `inset 3px 0 0 0 ${BLUE}`;
             }}
         >
             {/* Title + ID */}
             <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start" }}>
                 <div style={{ fontWeight: 700, fontSize: 13, lineHeight: 1.35, color: CREAM }}>{title}</div>
-                <div style={{ fontSize: 10, color: AMBER, opacity: 0.75, flexShrink: 0, letterSpacing: "0.06em" }}>
+                <div style={{ fontSize: 10, color: BLUE, opacity: 0.75, flexShrink: 0, letterSpacing: "0.06em" }}>
                     #{t.id}
                 </div>
             </div>
@@ -58,13 +58,13 @@ export function StoryCard({ t }: { t: StoryDTO }) {
                     {t.story_type && (
                         <span
                             style={{
-                                border: `1px solid rgba(245,200,66,0.4)`,
+                                border: `1px solid rgba(77,184,255,0.4)`,
                                 borderRadius: 0,
                                 padding: "2px 6px",
                                 fontSize: 10,
                                 letterSpacing: "0.1em",
                                 textTransform: "uppercase",
-                                color: AMBER,
+                                color: BLUE,
                             }}
                         >
                             {t.story_type}
